@@ -8,6 +8,9 @@ metadata:
 spec:
   parameterServers: 3
   workers: 3
+  grpcPort: 2222
+  requestLoadBalancer: true
+  image: tensorflow/tf_grpc_server #this will can be overriden by the templates.
 # We can make parameter and worker templates optional, in which case there'll need to be a default pod template that can be overriden by values in the template.
   parameterServerTemplate:
     spec:
