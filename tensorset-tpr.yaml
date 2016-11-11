@@ -1,0 +1,7 @@
+apiVersion: extensions/v1beta1
+kind: ThirdPartyResource
+description: "A spec for a Tensorflow Distributed Training cluster"
+metadata:
+  name: "tensor-set.stable.elsonrodriguez.com"
+versions:
+  - name: v1

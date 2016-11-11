@@ -1,0 +1,47 @@
+---
+kind: TensorSet 
+apiVersion: tensor-set.stable.elsonrodriguez.com/v1
+metadata:
+  labels:
+    type: image-training 
+  name: cluster-1 
+spec:
+  parameterServers: 3
+  workers: 3
+# We can make parameter and worker templates optional, in which case there'll need to be a default pod template that can be overriden by values in the template.
+  parameterServerTemplate:
+    spec:
+      containers:
+      - name: tf-ps
+        image: {docker_image}
+        args:
+          - --cluster_spec={cluster_spec}
+          - --job_name=ps
+          - --task_id={param_server_id}
+        ports:
+        - containerPort: {port}
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
+      volumes:
+      - name: shared
+        persistentVolumeClaim: 
+          claimName: ts-shared
+  workerTemplate:
+    spec:
+      containers:
+      - name: tf-worker
+        image: {docker_image}
+        args:
+          - --cluster_spec={cluster_spec}
+          - --job_name=worker
+          - --task_id={worker_id}
+        ports:
+        - containerPort: {port}
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
+      volumes:
+      - name: shared
+        persistentVolumeClaim: 
+          claimName: ts-shared
