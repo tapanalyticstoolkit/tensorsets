@@ -41,7 +41,7 @@ WORKER_RC = (
     """apiVersion: v1
 kind: ReplicationController
 metadata:
-  name: tf-worker{worker_id}
+  name: {cluster_name}-tf-worker{worker_id}
 spec:
   replicas: 1
   template:
@@ -70,29 +70,33 @@ WORKER_SVC = (
     """apiVersion: v1
 kind: Service
 metadata:
-  name: tf-worker{worker_id}
+  name: clustername-tf-worker{worker_id}
   labels:
     tf-worker: "{worker_id}"
+    ts-cluster-name: "{cluster_name}"
 spec:
   ports:
   - port: {port}
     targetPort: {port}
   selector:
     tf-worker: "{worker_id}"
+    ts-cluster-name: "{cluster_name}"
 """)
 WORKER_LB_SVC = (
     """apiVersion: v1
 kind: Service
 metadata:
-  name: tf-worker{worker_id}
+  name: clustername-tf-worker{worker_id}
   labels:
     tf-worker: "{worker_id}"
+    ts-cluster-name: "{cluster_name}"
 spec:
   type: LoadBalancer
   ports:
   - port: {port}
   selector:
     tf-worker: "{worker_id}"
+    ts-cluster-name: "{cluster_name}"
 """)
 PARAM_SERVER_RC = (
     """apiVersion: v1
@@ -105,6 +109,7 @@ spec:
     metadata:
       labels:
         tf-ps: "{param_server_id}"
+        ts-cluster-name: "{cluster_name}"
     spec:
       containers:
       - name: tf-ps{param_server_id}
@@ -127,33 +132,41 @@ PARAM_SERVER_SVC = (
     """apiVersion: v1
 kind: Service
 metadata:
-  name: tf-ps{param_server_id}
+  name: {cluster_name}-tf-ps{param_server_id}
   labels:
     tf-ps: "{param_server_id}"
+    ts-cluster-name: "{cluster_name}"
 spec:
   ports:
   - port: {port}
   selector:
     tf-ps: "{param_server_id}"
+    ts-cluster-name: "{cluster_name}"
 """)
 PARAM_LB_SVC = ("""apiVersion: v1
 kind: Service
 metadata:
-  name: tf-ps{param_server_id}
+  name: {cluster_name}-tf-ps{param_server_id}
   labels:
     tf-ps: "{param_server_id}"
+    ts-cluster-name: "{cluster_name}"
 spec:
   type: LoadBalancer
   ports:
   - port: {port}
   selector:
     tf-ps: "{param_server_id}"
+    ts-cluster-name: "{cluster_name}"
 """)
 
 
 def main():
   """Do arg parsing."""
   parser = argparse.ArgumentParser()
+  parser.add_argument('--cluster_name',
+                      type=str,
+                      required=True, 
+                      help='Name of training cluster')
   parser.add_argument('--num_workers',
                       type=int,
                       default=2,
@@ -190,7 +203,8 @@ def main():
     sys.exit(1)
 
   # Generate contents of yaml config
-  yaml_config = GenerateConfig(args.num_workers,
+  yaml_config = GenerateConfig(args.cluster_name,
+                               args.num_workers,
                                args.num_parameter_servers,
                                args.grpc_port,
                                args.request_load_balancer,
@@ -198,7 +212,8 @@ def main():
   print(yaml_config)  # pylint: disable=superfluous-parens
 
 
-def GenerateConfig(num_workers,
+def GenerateConfig(cluster_name,
+                   num_workers,
                    num_param_servers,
                    port,
                    request_load_balancer,
@@ -207,66 +222,75 @@ def GenerateConfig(num_workers,
   config = ''
   for worker in range(num_workers):
     config += WORKER_RC.format(
+        cluster_name=cluster_name,
         port=port,
         worker_id=worker,
         docker_image=docker_image,
-        cluster_spec=WorkerClusterSpecString(num_workers,
+        cluster_spec=WorkerClusterSpecString(cluster_name,
+                                             num_workers,
                                              num_param_servers,
                                              port))
     config += '---\n'
     if request_load_balancer:
-      config += WORKER_LB_SVC.format(port=port,
+      config += WORKER_LB_SVC.format(cluster_name=cluster_name,
+                                     port=port,
                                      worker_id=worker)
     else:
-      config += WORKER_SVC.format(port=port,
+      config += WORKER_SVC.format(cluster_name=cluster_name,
+                                  port=port,
                                   worker_id=worker)
     config += '---\n'
 
   for param_server in range(num_param_servers):
     config += PARAM_SERVER_RC.format(
+        cluster_name=cluster_name,
         port=port,
         param_server_id=param_server,
         docker_image=docker_image,
-        cluster_spec=ParamServerClusterSpecString(num_workers,
+        cluster_spec=ParamServerClusterSpecString(cluster_name,
+                                                  num_workers,
                                                   num_param_servers,
                                                   port))
     config += '---\n'
     if request_load_balancer:
-      config += PARAM_LB_SVC.format(port=port, param_server_id=param_server)
+      config += PARAM_LB_SVC.format(cluster_name=cluster_name, port=port, param_server_id=param_server)
     else:
-      config += PARAM_SERVER_SVC.format(port=port, param_server_id=param_server)
+      config += PARAM_SERVER_SVC.format(cluster_name=cluster_name, port=port, param_server_id=param_server)
     config += '---\n'
 
   return config
 
 
-def WorkerClusterSpecString(num_workers,
+def WorkerClusterSpecString(cluster_name,
+                            num_workers,
                             num_param_servers,
                             port):
   """Generates worker cluster spec."""
-  return ClusterSpecString(num_workers, num_param_servers, port)
+  return ClusterSpecString(cluster_name, num_workers, num_param_servers, port)
 
 
-def ParamServerClusterSpecString(num_workers,
+def ParamServerClusterSpecString(cluster_name,
+                                 num_workers,
                                  num_param_servers,
                                  port):
   """Generates parameter server spec."""
-  return ClusterSpecString(num_workers, num_param_servers, port)
+  return ClusterSpecString(cluster_name, num_workers, num_param_servers, port)
 
 
-def ClusterSpecString(num_workers,
+def ClusterSpecString(cluster_name,
+                      num_workers,
                       num_param_servers,
                       port):
   """Generates general cluster spec."""
   spec = 'worker|'
   for worker in range(num_workers):
-    spec += 'tf-worker%d:%d' % (worker, port)
+    spec += '%s-tf-worker%d:%d' % (cluster_name, worker, port)
     if worker != num_workers-1:
       spec += ';'
 
   spec += ',ps|'
   for param_server in range(num_param_servers):
-    spec += 'tf-ps%d:%d' % (param_server, port)
+    spec += '%s-tf-ps%d:%d' % (cluster_name, param_server, port)
     if param_server != num_param_servers-1:
       spec += ';'
 
