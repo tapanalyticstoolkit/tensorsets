@@ -1,4 +1,9 @@
+#!/bin/bash
+
 # check for tensorsets in all namespaces that do not have corresponding rcs/svcs
+
+curl http://127.0.0.1:8080/apis/stable.elsonrodriguez.com/v0/namespaces/$namespace/tensorsets
+
 
 # create object template via scripts/k8s_tensorflow.py
 

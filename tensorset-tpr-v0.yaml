@@ -4,4 +4,4 @@ description: "A spec for a Tensorflow Distributed Training cluster"
 metadata:
   name: "tensor-set.stable.elsonrodriguez.com"
 versions:
-  - name: v1
+  - name: v0

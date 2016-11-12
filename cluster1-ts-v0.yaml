@@ -1,6 +1,6 @@
 ---
 kind: TensorSet 
-apiVersion: tensor-set.stable.elsonrodriguez.com/v0
+apiVersion: stable.elsonrodriguez.com/v0
 metadata:
   labels:
     type: image-training 
