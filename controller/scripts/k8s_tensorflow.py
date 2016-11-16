@@ -42,12 +42,17 @@ WORKER_RC = (
 kind: ReplicationController
 metadata:
   name: {cluster_name}-tf-worker{worker_id}
+  labels:
+    tf-worker: "{worker_id}"
+    ts-cluster-name: "{cluster_name}"
+    creator: tensorset-controller
 spec:
   replicas: 1
   template:
     metadata:
       labels:
         tf-worker: "{worker_id}"
+        ts-cluster-name: "{cluster_name}"
     spec:
       containers:
       - name: tf-worker{worker_id}
@@ -70,10 +75,11 @@ WORKER_SVC = (
     """apiVersion: v1
 kind: Service
 metadata:
-  name: clustername-tf-worker{worker_id}
+  name: {cluster_name}-tf-worker{worker_id}
   labels:
     tf-worker: "{worker_id}"
     ts-cluster-name: "{cluster_name}"
+    creator: tensorset-controller
 spec:
   ports:
   - port: {port}
@@ -86,10 +92,11 @@ WORKER_LB_SVC = (
     """apiVersion: v1
 kind: Service
 metadata:
-  name: clustername-tf-worker{worker_id}
+  name: {cluster_name}-tf-worker{worker_id}
   labels:
     tf-worker: "{worker_id}"
     ts-cluster-name: "{cluster_name}"
+    creator: tensorset-controller
 spec:
   type: LoadBalancer
   ports:
@@ -102,7 +109,11 @@ PARAM_SERVER_RC = (
     """apiVersion: v1
 kind: ReplicationController
 metadata:
-  name: tf-ps{param_server_id}
+  name: {cluster_name}-tf-ps{param_server_id}
+  labels:
+    tf-ps: "{param_server_id}"
+    ts-cluster-name: "{cluster_name}"
+    creator: tensorset-controller
 spec:
   replicas: 1
   template:
@@ -136,6 +147,7 @@ metadata:
   labels:
     tf-ps: "{param_server_id}"
     ts-cluster-name: "{cluster_name}"
+    creator: tensorset-controller
 spec:
   ports:
   - port: {port}
@@ -150,6 +162,7 @@ metadata:
   labels:
     tf-ps: "{param_server_id}"
     ts-cluster-name: "{cluster_name}"
+    creator: tensorset-controller
 spec:
   type: LoadBalancer
   ports:
