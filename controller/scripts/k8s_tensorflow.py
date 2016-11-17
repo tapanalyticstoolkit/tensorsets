@@ -43,6 +43,7 @@ kind: ReplicationController
 metadata:
   name: {cluster_name}-tf-worker{worker_id}
   labels:
+    tf-component: "worker"
     tf-worker: "{worker_id}"
     ts-cluster-name: "{cluster_name}"
     creator: tensorset-controller
@@ -77,6 +78,7 @@ kind: Service
 metadata:
   name: {cluster_name}-tf-worker{worker_id}
   labels:
+    tf-component: "worker"
     tf-worker: "{worker_id}"
     ts-cluster-name: "{cluster_name}"
     creator: tensorset-controller
@@ -94,6 +96,7 @@ kind: Service
 metadata:
   name: {cluster_name}-tf-worker{worker_id}
   labels:
+    tf-component: "worker"
     tf-worker: "{worker_id}"
     ts-cluster-name: "{cluster_name}"
     creator: tensorset-controller
@@ -111,6 +114,7 @@ kind: ReplicationController
 metadata:
   name: {cluster_name}-tf-ps{param_server_id}
   labels:
+    tf-component: "parameter-server"
     tf-ps: "{param_server_id}"
     ts-cluster-name: "{cluster_name}"
     creator: tensorset-controller
@@ -145,6 +149,7 @@ kind: Service
 metadata:
   name: {cluster_name}-tf-ps{param_server_id}
   labels:
+    tf-component: "parameter-server"
     tf-ps: "{param_server_id}"
     ts-cluster-name: "{cluster_name}"
     creator: tensorset-controller
@@ -160,6 +165,7 @@ kind: Service
 metadata:
   name: {cluster_name}-tf-ps{param_server_id}
   labels:
+    tf-component: "parameter-server"
     tf-ps: "{param_server_id}"
     ts-cluster-name: "{cluster_name}"
     creator: tensorset-controller
