@@ -86,6 +86,7 @@ spec:
   ports:
   - port: {port}
     targetPort: {port}
+    name: tensorflow
   selector:
     tf-worker: "{worker_id}"
     ts-cluster-name: "{cluster_name}"
@@ -104,6 +105,7 @@ spec:
   type: LoadBalancer
   ports:
   - port: {port}
+    name: tensorflow
   selector:
     tf-worker: "{worker_id}"
     ts-cluster-name: "{cluster_name}"
@@ -156,6 +158,7 @@ metadata:
 spec:
   ports:
   - port: {port}
+    name: tensorflow
   selector:
     tf-ps: "{param_server_id}"
     ts-cluster-name: "{cluster_name}"
@@ -173,6 +176,7 @@ spec:
   type: LoadBalancer
   ports:
   - port: {port}
+    name: tensorflow
   selector:
     tf-ps: "{param_server_id}"
     ts-cluster-name: "{cluster_name}"
