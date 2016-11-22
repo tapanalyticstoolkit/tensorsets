@@ -53,7 +53,7 @@ while true; do
       post_response=$(echo "$tensorset_objects" | kubectl create -f - 2>&1 | grep -v AlreadyExists)
       echo "Enforcing objects for TensorSet ${tensorset_name}"
     done
-
+  fi
     # clean up wayward objects by checking all namespaces for objects with tensorset labels that do not have corresponding tensorset objects
     for object_type in replicationcontrollers services; do
       tensorset_objs=$(eval "${BASE_CURL_CMD} ${BASE_K8S_API}/api/v1/${object_type}?labelSelector=creator%3Dtensorset-controller")
@@ -83,7 +83,6 @@ while true; do
       done
     done
 
-  fi
   #This should be replaced with a watch when this is rewritten.
   sleep 1
 done
