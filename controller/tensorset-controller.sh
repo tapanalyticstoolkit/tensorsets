@@ -5,6 +5,8 @@
 ## ...
 
 
+echo "Started TensorSet Controller"
+
 TENSORSET_API_VERSION="stable.elsonrodriguez.com/v0"
 # apis/stable.elsonrodriguez.com/v0/namespaces/eorodrig/tensorsets/cluster-1
 
@@ -14,11 +16,15 @@ while true; do
   fi
 
   if [ -e /run/secrets/kubernetes.io/serviceaccount/ca.crt ]; then
-    ca_cert_flag="--ca-cert=/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+    ca_cert_flag="--cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt"
   fi
 
   #FIXME detect http or https for BASE_K8S_API
-  KUBERNETES_SERVICE_PROTOCOL=http
+  if [ "$KUBERNETES_SERVICE_PORT" == "443" ]; then
+    KUBERNETES_SERVICE_PROTOCOL=https
+  else
+    KUBERNETES_SERVICE_PROTOCOL=http
+  fi
 
   BASE_CURL_CMD="curl -s -L --header 'Authorization: Bearer ${KUBERNETES_TOKEN}' --header 'Accept: application/json, */*' ${ca_cert_flag}"
   BASE_K8S_API=${KUBERNETES_SERVICE_PROTOCOL}://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}
@@ -33,7 +39,7 @@ while true; do
     for i in `seq 0 $max_index`; do
       # set variables
       tensorset_name=$(jq -rn '$tensorsets | fromjson  | .items['$i'].metadata.name' --arg tensorsets "$tensorsets")
-      tensorset_namespace=$(jq -rn '$tensorsets | fromjson  | .items['$i'].metadata.name' --arg tensorsets "$tensorsets")
+      tensorset_namespace=$(jq -rn '$tensorsets | fromjson  | .items['$i'].metadata.namespace' --arg tensorsets "$tensorsets")
 
       grpc_port=$(jq -rn '$tensorsets | fromjson  | .items['$i'].spec.grpcPort' --arg tensorsets "$tensorsets")
       image=$(jq -rn '$tensorsets | fromjson  | .items['$i'].spec.image' --arg tensorsets "$tensorsets")
@@ -50,16 +56,18 @@ while true; do
 
       # submit object yaml to api under the tensorset's namespace
       # it doesn't look like there's an api endpoint that accepts a hodgepodge of objects. the yaml must be parsed on client side and then submitted to the respective object-type endpoints per namespace. so we're punting to kubectl for this one.
-      post_response=$(echo "$tensorset_objects" | kubectl create -f - 2>&1 | grep -v AlreadyExists)
+      post_response=$(echo "$tensorset_objects" | kubectl create --namespace=$tensorset_namespace -f - 2>&1 | grep -v AlreadyExists)
       echo "Enforcing objects for TensorSet ${tensorset_name}"
     done
   fi
     # clean up wayward objects by checking all namespaces for objects with tensorset labels that do not have corresponding tensorset objects
-    for object_type in replicationcontrollers services; do
-      tensorset_objs=$(eval "${BASE_CURL_CMD} ${BASE_K8S_API}/api/v1/${object_type}?labelSelector=creator%3Dtensorset-controller")
-      num_objs=$(jq -n '$tensorset_objs | fromjson | .items | length' --arg tensorset_objs "$tensorset_objs")
+  for object_type in replicationcontrollers services; do
+    tensorset_objs=$(eval "${BASE_CURL_CMD} ${BASE_K8S_API}/api/v1/${object_type}?labelSelector=creator%3Dtensorset-controller")
+    num_objs=$(jq -n '$tensorset_objs | fromjson | .items | length' --arg tensorset_objs "$tensorset_objs")
 
+    if [ "${num_objs}" -gt 0 ]; then
       max_index=$(($num_objs - 1))
+
       for i in `seq 0 $max_index`; do
         obj_name=$(jq -rn '$tensorset_obj | fromjson | .items['$i'].metadata.name' --arg tensorset_obj "$tensorset_objs")
         obj_namespace=$(jq -rn '$tensorset_obj | fromjson | .items['$i'].metadata.namespace' --arg tensorset_obj "$tensorset_objs")
@@ -81,8 +89,8 @@ while true; do
           echo "Deleted orphaned $object_type $obj_name"
         fi
       done
-    done
-
+    fi
+  done
   #This should be replaced with a watch when this is rewritten.
   sleep 1
 done

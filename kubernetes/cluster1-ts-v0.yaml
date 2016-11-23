@@ -4,13 +4,13 @@ apiVersion: stable.elsonrodriguez.com/v0
 metadata:
   labels:
     type: image-training 
-  name: cluster-1 
+  name: cluster1 
 spec:
   parameterServers: 3
   workers: 3
   grpcPort: 2222
   requestLoadBalancer: true 
-  image: tensorflow/tf_grpc_server
+  image: elsonrodriguez/tf_grpc_server:tensorset-example-0.0
 #  This will be for v1, for now this is just discovery around the existing example.
 #  parameterServerTemplate:
 #  workerTemplate:

@@ -1,0 +1,22 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: tensorset-controller
+  namespace: kube-system
+  labels:
+    app: tensorset-controller
+    version: "0.0"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: tensorset-controller
+      labels:
+        app: tensorset-controller
+        version: "0.0"
+    spec:
+      containers:
+      - name: tensorset-controller
+        image: elsonrodriguez/tensorset-controller:0.0
+        imagePullPolicy: Always

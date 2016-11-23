@@ -1,23 +1,24 @@
-apiVersion: v1
-kind: ReplicationController
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: tf-client0
+  name: cluster1-job
 spec:
   template:
     metadata:
       labels:
         tf-client: "0"
+        ts-clustername: cluster1
     spec:
       containers:
       - name: tf-client
-        image: elsonrodriguez/tf-dist-test-client:k8s
-        command:
-        - sh
-        - -c
-        - while true; do sleep 1; done
+        image: elsonrodriguez/tf-dist-test-client-k8s:tensorset-example-0.0
+#        command:
+#        - sh
+#        - -c
+#        - while true; do sleep 1; done
         env:
         -  name: TS_CLUSTER_NAME
-           value: cluster-1
+           value: cluster1
         -  name: TS_CLUSTER_NAMESPACE
            valueFrom:
             fieldRef:
@@ -31,6 +32,7 @@ spec:
       - name: shared
         hostPath:
           path: /shared
+      restartPolicy: Never
 ---
 apiVersion: v1
 kind: Service
@@ -44,4 +46,5 @@ spec:
   - port: 2222
   selector:
     tf-client: "0"
+    ts-clustername: cluster1
 ---

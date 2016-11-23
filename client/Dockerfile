@@ -1,5 +1,4 @@
-#nobody uses tags...
-FROM elsonrodriguez/tf_grpc_server:k8s
+FROM elsonrodriguez/tf-dist-test-client:tensorset-example-0.0
 MAINTAINER Elson Rodriguez <elson.rodriguez@gmail.com>
 
 ENV KUBECTL_VERSION v1.4.0
