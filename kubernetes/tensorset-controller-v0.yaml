@@ -18,5 +18,5 @@ spec:
     spec:
       containers:
       - name: tensorset-controller
-        image: elsonrodriguez/tensorset-controller:0.0
+        image: elsonrodriguez/tensorset-controller:0.1
         imagePullPolicy: Always

@@ -32,6 +32,8 @@ import sys
 
 DEFAULT_DOCKER_IMAGE = 'tensorflow/tf_grpc_test_server'
 DEFAULT_PORT = 2222
+DEFAULT_CLUSTER_NAME = 'cluster1'
+DEFAULT_CREATOR= 'default'
 
 # TODO(cais): Consider adding resource requests/limits to the pods.
 
@@ -46,7 +48,7 @@ metadata:
     tf-component: "worker"
     tf-worker: "{worker_id}"
     ts-cluster-name: "{cluster_name}"
-    creator: tensorset-controller
+    creator: "{creator}"
 spec:
   replicas: 1
   template:
@@ -81,7 +83,7 @@ metadata:
     tf-component: "worker"
     tf-worker: "{worker_id}"
     ts-cluster-name: "{cluster_name}"
-    creator: tensorset-controller
+    creator: "{creator}"
 spec:
   ports:
   - port: {port}
@@ -100,7 +102,7 @@ metadata:
     tf-component: "worker"
     tf-worker: "{worker_id}"
     ts-cluster-name: "{cluster_name}"
-    creator: tensorset-controller
+    creator: "{creator}"
 spec:
   type: LoadBalancer
   ports:
@@ -119,7 +121,7 @@ metadata:
     tf-component: "parameter-server"
     tf-ps: "{param_server_id}"
     ts-cluster-name: "{cluster_name}"
-    creator: tensorset-controller
+    creator: "{creator}"
 spec:
   replicas: 1
   template:
@@ -154,7 +156,7 @@ metadata:
     tf-component: "parameter-server"
     tf-ps: "{param_server_id}"
     ts-cluster-name: "{cluster_name}"
-    creator: tensorset-controller
+    creator: "{creator}"
 spec:
   ports:
   - port: {port}
@@ -171,7 +173,7 @@ metadata:
     tf-component: "parameter-server"
     tf-ps: "{param_server_id}"
     ts-cluster-name: "{cluster_name}"
-    creator: tensorset-controller
+    creator: "{creator}"
 spec:
   type: LoadBalancer
   ports:
@@ -188,8 +190,12 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--cluster_name',
                       type=str,
-                      required=True, 
+                      default=DEFAULT_CLUSTER_NAME,
                       help='Name of training cluster')
+  parser.add_argument('--creator',
+                      type=str,
+                      default=DEFAULT_CREATOR,
+                      help="Name of the cluster's creator")
   parser.add_argument('--num_workers',
                       type=int,
                       default=2,
@@ -227,6 +233,7 @@ def main():
 
   # Generate contents of yaml config
   yaml_config = GenerateConfig(args.cluster_name,
+                               args.creator,
                                args.num_workers,
                                args.num_parameter_servers,
                                args.grpc_port,
@@ -236,6 +243,7 @@ def main():
 
 
 def GenerateConfig(cluster_name,
+                   creator,
                    num_workers,
                    num_param_servers,
                    port,
@@ -246,6 +254,7 @@ def GenerateConfig(cluster_name,
   for worker in range(num_workers):
     config += WORKER_RC.format(
         cluster_name=cluster_name,
+        creator=creator,
         port=port,
         worker_id=worker,
         docker_image=docker_image,
@@ -256,10 +265,12 @@ def GenerateConfig(cluster_name,
     config += '---\n'
     if request_load_balancer:
       config += WORKER_LB_SVC.format(cluster_name=cluster_name,
+                                     creator=creator,
                                      port=port,
                                      worker_id=worker)
     else:
       config += WORKER_SVC.format(cluster_name=cluster_name,
+                                  creator=creator,
                                   port=port,
                                   worker_id=worker)
     config += '---\n'
@@ -267,6 +278,7 @@ def GenerateConfig(cluster_name,
   for param_server in range(num_param_servers):
     config += PARAM_SERVER_RC.format(
         cluster_name=cluster_name,
+        creator=creator,
         port=port,
         param_server_id=param_server,
         docker_image=docker_image,
@@ -276,9 +288,9 @@ def GenerateConfig(cluster_name,
                                                   port))
     config += '---\n'
     if request_load_balancer:
-      config += PARAM_LB_SVC.format(cluster_name=cluster_name, port=port, param_server_id=param_server)
+      config += PARAM_LB_SVC.format(cluster_name=cluster_name, creator=creator, port=port, param_server_id=param_server)
     else:
-      config += PARAM_SERVER_SVC.format(cluster_name=cluster_name, port=port, param_server_id=param_server)
+      config += PARAM_SERVER_SVC.format(cluster_name=cluster_name, creator=creator, port=port, param_server_id=param_server)
     config += '---\n'
 
   return config

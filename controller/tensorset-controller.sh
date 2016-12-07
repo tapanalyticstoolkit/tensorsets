@@ -48,6 +48,7 @@ while true; do
       request_load_balancer=$(jq -rn '$tensorsets | fromjson  | .items['$i'].spec.requestLoadBalancer' --arg tensorsets "$tensorsets")
       # create object template via scripts/k8s_tensorflow.py
       tensorset_objects=$(scripts/k8s_tensorflow.py --cluster_name $tensorset_name \
+                                                    --creator tensorset-controller \
                                                     --num_workers $workers \
                                                     --num_parameter_servers $parameter_servers \
                                                     --grpc_port $grpc_port \
